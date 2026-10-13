@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Kursus MHPSS</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --bg:#f3f6fa; --card:#ffffff; --ink:#0f2a3d; --muted:#61758a; --line:#e3e9f0;
+  --navy:#0b3a5b; --teal:#0f9b8e; --teal-soft:#e2f5f2; --blue:#2f6fde; --blue-soft:#e6eefc;
+  --amber:#f2a531; --amber-soft:#fdf2e0; --red:#e0524f; --red-soft:#fce8e8;
+  --violet:#7a5af5; --violet-soft:#efeafe; --green:#22a95b; --green-soft:#e3f6ea;
+  --radius:16px; --shadow:0 1px 2px rgba(15,42,61,.06),0 6px 18px rgba(15,42,61,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1320px;margin:0 auto;padding:20px 16px 40px}
+
+/* Header */
+.hero{background:linear-gradient(120deg,var(--navy) 0%,#11587e 55%,var(--teal) 100%);color:#fff;border-radius:20px;padding:22px 24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.hero h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.2px}
+.hero p{margin:4px 0 0;opacity:.85;font-size:13px}
+.hero .badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600}
+
+/* Filter bar */
+.filters{margin-top:16px;background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.f input,.f select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe;color:var(--ink);min-width:150px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:12px;font-weight:600;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.btn{font:inherit;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;border:none;background:var(--navy);color:#fff;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);padding-bottom:8px}
+.spacer{flex:1}
+.status{font-size:12px;color:var(--muted);margin-top:8px}
+.status.err{color:var(--red);font-weight:600}
+
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:16px}
+.kpi{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi .ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:10px}
+.kpi .ico svg{width:20px;height:20px}
+.kpi .lbl{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .val{font-size:30px;font-weight:800;line-height:1.1;margin-top:4px}
+.kpi .val small{font-size:15px;font-weight:700;margin-left:6px}
+.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+.kpi .bar{height:6px;background:var(--line);border-radius:6px;margin-top:10px;overflow:hidden}
+.kpi .bar i{display:block;height:100%;border-radius:6px;transition:width .6s}
+.kpi.hero-kpi{background:linear-gradient(135deg,#0f9b8e,#0b7f74);color:#fff}
+.kpi.hero-kpi .lbl,.kpi.hero-kpi .sub{color:rgba(255,255,255,.85)}
+.kpi.hero-kpi .bar{background:rgba(255,255,255,.25)}
+
+/* Panels */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:14px}
+.panel{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
+.panel h3{margin:0 0 2px;font-size:15px;font-weight:700}
+.panel .hint{font-size:12px;color:var(--muted);margin-bottom:10px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media(max-width:980px){.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+.chart-box{position:relative;height:280px}
+.chart-box.tall{height:380px}
+.donuts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.donuts .chart-box{height:220px}
+.donut-title{text-align:center;font-size:13px;font-weight:700;margin-top:4px}
+.legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+/* Table */
+.tbl-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tbl-tools input,.tbl-tools select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:200px}
+.tbl-wrap{overflow:auto;max-height:460px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:#f7f9fc;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:#fafcff}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.p-ok{background:var(--green-soft);color:#14773e}
+.p-warn{background:var(--amber-soft);color:#a8670a}
+.p-bad{background:var(--red-soft);color:#b0302d}
+.p-na{background:#eef1f5;color:#5d6b7a}
+.score{font-weight:700}
+.score.l{color:#14773e}.score.g{color:#b0302d}
+.muted{color:var(--muted)}
+.foot{font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.6}
+.loader{position:fixed;inset:0;background:rgba(243,246,250,.8);display:grid;place-items:center;z-index:10;font-weight:700;color:var(--navy)}
+.loader.hide{display:none}
+.spin{width:38px;height:38px;border:4px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:s 1s linear infinite;margin:0 auto 10px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media print{.filters,.tbl-tools{display:none}.panel,.kpi{box-shadow:none;border:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="loader" id="loader"><div><div class="spin"></div>Memuatkan data…</div></div>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <h1>Pencapaian Peserta Kursus MHPSS</h1>
+      <p>Mental Health &amp; Psychosocial Support · Jabatan Kesihatan Negeri Kedah</p>
+    </div>
+    <div class="badge" id="lastUpdate">—</div>
+  </header>
+
+  <!-- Filters -->
+  <section class="filters">
+    <div class="f"><label for="dFrom">Dari tarikh</label><input type="date" id="dFrom"></div>
+    <div class="f"><label for="dTo">Hingga tarikh</label><input type="date" id="dTo"></div>
+    <div class="f"><label>Pilihan pantas</label>
+      <div class="chips">
+        <button class="chip" data-preset="all">Semua</button>
+        <button class="chip" data-preset="today">Hari ini</button>
+        <button class="chip" data-preset="month">Bulan ini</button>
+        <button class="chip" data-preset="30">30 hari</button>
+        <button class="chip" data-preset="year">Tahun ini</button>
+      </div>
+    </div>
+    <div class="f"><label for="method">Ujian berulang dikira</label>
+      <select id="method">
+        <option value="best">Percubaan terbaik</option>
+        <option value="first">Percubaan pertama</option>
+      </select>
+    </div>
+    <label class="toggle"><input type="checkbox" id="exclTest" checked> Kecualikan data cubaan/test</label>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="btnUpload">Muat naik CSV</button>
+    <input type="file" id="fileIn" accept=".csv" hidden>
+    <button class="btn" id="btnReload">↻ Muat semula</button>
+  </section>
+  <div class="status" id="status"></div>
+
+  <!-- KPI cards -->
+  <section class="kpis">
+    <div class="kpi">
+      <div class="ico" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="lbl">Jumlah peserta</div>
+      <div class="val" id="kTotal">0</div>
+      <div class="sub">Peserta unik (ikut No KP)</div>
+    </div>
+    <div class="kpi">
+      <div class="ico" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+      <div class="lbl">Jawab Ujian Pra</div>
+      <div class="val" id="kPra">0</div>
+      <div class="sub" id="kPraSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="ico" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></div>
+      <div class="lbl">Lulus Ujian Pra</div>
+      <div class="val"><span id="kPraPass">0</span><small id="kPraPct" style="color:var(--amber)">0%</small></div>
+      <div class="sub">daripada yang jawab Pra</div>
+      <div class="bar"><i id="bPra" style="background:var(--amber);width:0"></i></div>
+    </div>
+    <div class="kpi">
+      <div class="ico" style="background:var(--violet-soft);color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div>
+      <div class="lbl">Jawab Ujian Pasca</div>
+      <div class="val" id="kPasca">0</div>
+      <div class="sub" id="kPascaSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="ico" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></div>
+      <div class="lbl">Lulus Ujian Pasca</div>
+      <div class="val"><span id="kPascaPass">0</span><small id="kPascaPct" style="color:var(--blue)">0%</small></div>
+      <div class="sub">daripada yang jawab Pasca</div>
+      <div class="bar"><i id="bPasca" style="background:var(--blue);width:0"></i></div>
+    </div>
+    <div class="kpi">
+      <div class="ico" style="background:var(--teal-soft);color:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M8 12h8"/></svg></div>
+      <div class="lbl">Jawab Pra &amp; Pasca</div>
+      <div class="val" id="kBoth">0</div>
+      <div class="sub" id="kBothSub">—</div>
+    </div>
+    <div class="kpi hero-kpi">
+      <div class="ico" style="background:rgba(255,255,255,.18);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <div class="lbl">KOMPETEN</div>
+      <div class="val"><span id="kKomp">0</span><small id="kKompPct">0%</small></div>
+      <div class="sub" id="kKompSub">Jawab Pra &amp; Pasca + lulus Pasca</div>
+      <div class="bar"><i id="bKomp" style="background:#fff;width:0"></i></div>
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <section class="grid">
+    <div class="panel c7">
+      <h3>Aliran Peserta ke Kompeten</h3>
+      <div class="hint">Bilangan peserta di setiap peringkat</div>
+      <div class="chart-box"><canvas id="cFunnel"></canvas></div>
+    </div>
+    <div class="panel c5">
+      <h3>Keputusan Ujian Pra vs Pasca</h3>
+      <div class="hint">Peratus lulus bagi setiap ujian</div>
+      <div class="donuts">
+        <div><div class="chart-box"><canvas id="cDonutPra"></canvas></div><div class="donut-title">Ujian Pra</div></div>
+        <div><div class="chart-box"><canvas id="cDonutPasca"></canvas></div><div class="donut-title">Ujian Pasca</div></div>
+      </div>
+      <div class="legend"><span style="--c:var(--green)">Lulus</span><span style="--c:#e8ecf2">Gagal</span></div>
+    </div>
+
+    <div class="panel c8">
+      <h3>Trend Bulanan</h3>
+      <div class="hint">Peserta jawab Pra, jawab Pasca dan menjadi Kompeten mengikut bulan</div>
+      <div class="chart-box"><canvas id="cTrend"></canvas></div>
+    </div>
+    <div class="panel c4">
+      <h3>Peningkatan Skor</h3>
+      <div class="hint">Purata skor (%) peserta yang jawab kedua-dua ujian</div>
+      <div class="chart-box"><canvas id="cScore"></canvas></div>
+    </div>
+
+    <div class="panel c12">
+      <h3>Pencapaian Mengikut PTJ</h3>
+      <div class="hint">10 PTJ dengan peserta terbanyak · Kompeten vs belum kompeten</div>
+      <div class="chart-box tall"><canvas id="cPtj"></canvas></div>
+    </div>
+
+    <div class="panel c12">
+      <h3>Senarai Peserta</h3>
+      <div class="hint">Status setiap peserta dalam julat tarikh dipilih</div>
+      <div class="tbl-tools">
+        <input type="search" id="q" placeholder="Cari nama / PTJ…">
+        <select id="fStatus">
+          <option value="">Semua status</option>
+          <option value="Kompeten">Kompeten</option>
+          <option value="Belum lulus Pasca">Belum lulus Pasca</option>
+          <option value="Belum jawab Pasca">Belum jawab Pasca</option>
+          <option value="Tiada rekod Pra">Tiada rekod Pra</option>
+        </select>
+        <span class="muted" id="tblCount" style="font-size:12px"></span>
+        <div class="spacer"></div>
+        <button class="btn ghost" id="btnExport">Eksport CSV</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Nama</th><th>No KP</th><th>PTJ</th><th>Pra</th><th>Pasca</th><th>Status</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Definisi:</b> Peserta dikira unik mengikut No KP. <b>Kompeten</b> = peserta yang menjawab Ujian Pra <u>dan</u> Ujian Pasca dalam julat tarikh dipilih, serta lulus Ujian Pasca.
+    Status lulus diambil dari lajur <i>Competency</i> (jika kosong, lulus = ≥80%). Bagi peserta yang menjawab lebih sekali, kiraan mengikut pilihan "Ujian berulang dikira".
+    % Kompeten dikira daripada peserta yang jawab kedua-dua ujian.
+  </div>
+</div>
+
+<script>
+/* ================= KONFIGURASI ================= */
+const SHEET_ID = '11WRKcL1URdJv67qYAwnt_ooI8Cyb9_xb-0vXr8y4J-s';
+const SHEET_NAME = '';          // kosongkan untuk tab pertama, atau isi nama tab
+const PASS_PCT = 80;            // ambang lulus jika lajur Competency kosong
+// Rekod cubaan/test yang dikecualikan (emel atau No KP). Tambah/buang ikut keperluan.
+const EXCLUDE_EMAILS = ['acaparts02@gmail.com','test@gmail.com','ss@gmail.com','fsfsdf@gmail.com'];
+const EXCLUDE_KP     = ['123412121234','232323232323','710105025111'];
+/* =============================================== */
+
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+Chart.defaults.color = '#61758a';
+Chart.defaults.plugins.datalabels.display = false;
+
+const $ = id => document.getElementById(id);
+const C = {navy:'#0b3a5b',teal:'#0f9b8e',blue:'#2f6fde',amber:'#f2a531',violet:'#7a5af5',green:'#22a95b',red:'#e0524f',grey:'#e8ecf2'};
+let RAW = [];      // semua rekod (sudah diproses)
+let ROWS = [];     // senarai peserta selepas penapisan (untuk jadual)
+const charts = {};
+
+/* ---------- CSV parser ---------- */
+function parseCSV(text){
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===','){row.push(cur);cur='';}
+      else if(ch==='\n'){row.push(cur);rows.push(row);row=[];cur='';}
+      else if(ch!=='\r') cur+=ch;
+    }
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+
+/* ---------- Tarikh: "28/4/2026, 2:31:04 PTG", "2026-7-12 08:32:25" ---------- */
+function parseDate(s){
+  s=(s||'').trim(); if(!s) return null;
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(?:(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(PG|PTG|AM|PM)?)?/i);
+  if(m){
+    let h=+(m[4]||0); const ap=(m[7]||'').toUpperCase();
+    if((ap==='PTG'||ap==='PM')&&h<12) h+=12;
+    if((ap==='PG'||ap==='AM')&&h===12) h=0;
+    return new Date(+m[3],m[2]-1,+m[1],h,+(m[5]||0),+(m[6]||0));
+  }
+  m=s.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/); // format gviz
+  if(m) return new Date(+m[1],+m[2],+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const titleCase = s => s.toLowerCase().replace(/\s+/g,' ').trim().replace(/(^|[\s\/(@'-])([a-z])/g,(a,b,c)=>b+c.toUpperCase());
+
+function normPTJ(s){
+  let t=(s||'').toUpperCase().replace(/\s+/g,' ').trim();
+  t=t.replace(/^PEJABAT KESIHATAN DAERAH\b/,'PKD').replace(/^PEJABAT KESIHATAN PERGIGIAN DAERAH\b/,'PKPD');
+  t=t.replace(/^HOSP\b\.?/,'HOSPITAL');
+  if(/^HSB$/.test(t)) t='HOSPITAL SULTANAH BAHIYAH';
+  if(/^HSAH$/.test(t)) t='HOSPITAL SULTAN ABDUL HALIM';
+  return t||'TIDAK DINYATAKAN';
+}
+
+/* ---------- Proses data mentah ---------- */
+function ingest(text){
+  const rows=parseCSV(text); if(!rows.length) throw new Error('Tiada data.');
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const col=(...names)=>{for(const n of names){const i=head.findIndex(h=>h===n||h.includes(n)); if(i>-1) return i;} return -1;};
+  const iT=col('tarikh','timestamp'), iN=col('nama'), iK=col('no kp','kp'), iP=col('ptj'), iE=col('emel','email'),
+        iJ=col('jenis ujian','jenis'), iS=col('skor'), iPct=col('peratus'), iC=col('competency','kompeten');
+  if(iT<0||iJ<0) throw new Error('Lajur "Tarikh" atau "Jenis Ujian" tidak dijumpai.');
+  RAW = rows.slice(1).map(r=>{
+    const date=parseDate(r[iT]); const jenis=(r[iJ]||'').trim().toUpperCase();
+    const type = /PRA|PRE/.test(jenis)?'PRA':(/PASCA|POST/.test(jenis)?'PASCA':null);
+    const skor = parseFloat(r[iS]); let pct=parseFloat((r[iPct]||'').replace('%',''));
+    if(isNaN(pct)&&!isNaN(skor)) pct=Math.round(skor/15*100);
+    const comp=(r[iC]||'').trim().toLowerCase();
+    const pass = comp ? comp.startsWith('lulus') : (pct>=PASS_PCT);
+    const kp=(r[iK]||'').replace(/\D/g,''); const email=(r[iE]||'').trim().toLowerCase();
+    return {date,type,skor,pct:isNaN(pct)?null:pct,pass,kp,email,
+            kpRaw:(r[iK]||'').trim(),nama:titleCase(r[iN]||''),ptj:normPTJ(r[iP]),
+            key: kp || email || (r[iN]||'').trim().toLowerCase()};
+  }).filter(r=>r.date&&r.type&&r.key);
+  if(!RAW.length) throw new Error('Tiada rekod sah dijumpai.');
+  const dates=RAW.map(r=>r.date).sort((a,b)=>a-b);
+  RAW.minDate=dates[0]; RAW.maxDate=dates[dates.length-1];
+  $('dFrom').value=ymd(RAW.minDate); $('dTo').value=ymd(RAW.maxDate);
+  $('lastUpdate').textContent='Dikemas kini: '+new Date().toLocaleString('ms-MY',{dateStyle:'medium',timeStyle:'short'});
+  render();
+}
+
+/* ---------- Pengiraan ---------- */
+function compute(){
+  const from=$('dFrom').value?new Date($('dFrom').value+'T00:00:00'):new Date(0);
+  const to=$('dTo').value?new Date($('dTo').value+'T23:59:59'):new Date(8.64e15);
+  const method=$('method').value, excl=$('exclTest').checked;
+  const recs=RAW.filter(r=>r.date>=from&&r.date<=to&&!(excl&&(EXCLUDE_EMAILS.includes(r.email)||EXCLUDE_KP.includes(r.kp))));
+  const people=new Map();
+  recs.sort((a,b)=>a.date-b.date).forEach(r=>{
+    if(!people.has(r.key)) people.set(r.key,{nama:r.nama,kp:r.kpRaw,ptj:r.ptj,PRA:[],PASCA:[]});
+    const p=people.get(r.key); p[r.type].push(r); p.nama=r.nama; p.ptj=r.ptj; p.kp=r.kpRaw;
+  });
+  const pick=arr=>{
+    if(!arr.length) return null;
+    if(method==='first') return arr[0];
+    const passed=arr.filter(a=>a.pass);
+    const pool=passed.length?passed:arr;
+    return pool.reduce((b,a)=>(a.pct??0)>(b.pct??0)?a:b);
+  };
+  const list=[...people.values()].map(p=>{
+    const pre=pick(p.PRA), post=pick(p.PASCA);
+    const both=!!(pre&&post), komp=both&&post.pass;
+    const firstPassPost=p.PASCA.find(a=>a.pass);
+    const status= !pre ? 'Tiada rekod Pra' : !post ? 'Belum jawab Pasca' : komp ? 'Kompeten' : 'Belum lulus Pasca';
+    return {...p,pre,post,both,komp,status,
+      kompDate: komp ? (method==='first'?post.date:(firstPassPost||post).date) : null,
+      praDate: p.PRA[0]?.date, pascaDate: p.PASCA[0]?.date,
+      nPra:p.PRA.length,nPasca:p.PASCA.length};
+  });
+  return list;
+}
+
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
+
+function render(){
+  const L=compute(); ROWS=L;
+  const nPra=L.filter(p=>p.pre).length, nPraPass=L.filter(p=>p.pre&&p.pre.pass).length;
+  const nPasca=L.filter(p=>p.post).length, nPascaPass=L.filter(p=>p.post&&p.post.pass).length;
+  const nBoth=L.filter(p=>p.both).length, nKomp=L.filter(p=>p.komp).length;
+
+  $('kTotal').textContent=L.length;
+  $('kPra').textContent=nPra; $('kPraSub').textContent=pct(nPra,L.length)+'% daripada semua peserta';
+  $('kPraPass').textContent=nPraPass; $('kPraPct').textContent=pct(nPraPass,nPra)+'%'; $('bPra').style.width=pct(nPraPass,nPra)+'%';
+  $('kPasca').textContent=nPasca; $('kPascaSub').textContent=pct(nPasca,L.length)+'% daripada semua peserta';
+  $('kPascaPass').textContent=nPascaPass; $('kPascaPct').textContent=pct(nPascaPass,nPasca)+'%'; $('bPasca').style.width=pct(nPascaPass,nPasca)+'%';
+  $('kBoth').textContent=nBoth; $('kBothSub').textContent=pct(nBoth,L.length)+'% daripada semua peserta';
+  $('kKomp').textContent=nKomp; $('kKompPct').textContent=pct(nKomp,nBoth)+'%'; $('bKomp').style.width=pct(nKomp,nBoth)+'%';
+  $('kKompSub').textContent=`daripada ${nBoth} yang jawab kedua-dua · ${pct(nKomp,L.length)}% semua peserta`;
+  $('status').className='status'; $('status').textContent=`${L.length} peserta · ${L.reduce((s,p)=>s+p.nPra+p.nPasca,0)} rekod ujian dalam julat dipilih`;
+
+  drawFunnel([nPra,nPasca,nBoth,nKomp]);
+  drawDonut('cDonutPra',nPraPass,nPra-nPraPass,C.amber);
+  drawDonut('cDonutPasca',nPascaPass,nPasca-nPascaPass,C.blue);
+  drawTrend(L); drawScore(L); drawPTJ(L); drawTable();
+}
+
+/* ---------- Carta ---------- */
+function mk(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart($(id),cfg); }
+
+function drawFunnel(v){
+  const labels=['Jawab Ujian Pra','Jawab Ujian Pasca','Jawab Kedua-dua','Kompeten'];
+  mk('cFunnel',{type:'bar',
+    data:{labels,datasets:[{data:v,backgroundColor:[C.violet,C.blue,C.teal,C.green],borderRadius:10,barPercentage:.72}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,
+      layout:{padding:{right:60}},
+      scales:{x:{beginAtZero:true,grid:{color:'#eef2f6'}},y:{grid:{display:false},ticks:{font:{weight:'600'},color:'#0f2a3d'}}},
+      plugins:{legend:{display:false},
+        datalabels:{display:true,anchor:'end',align:'end',color:'#0f2a3d',font:{weight:'800',size:13},
+          formatter:(val,ctx)=>ctx.dataIndex===0||!v[0]?val:`${val} (${pct(val,v[0])}%)`}}}});
+}
+
+const centerText={id:'centerText',afterDraw(ch){
+  const t=ch.options.plugins.centerText; if(!t) return;
+  const {ctx,chartArea:{left,right,top,bottom}}=ch; const x=(left+right)/2,y=(top+bottom)/2;
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#0f2a3d'; ctx.font="800 24px 'Plus Jakarta Sans'"; ctx.fillText(t.big,x,y-8);
+  ctx.fillStyle='#61758a'; ctx.font="600 11px 'Plus Jakarta Sans'"; ctx.fillText(t.small,x,y+14); ctx.restore();
+}};
+function drawDonut(id,pass,fail,color){
+  const tot=pass+fail;
+  mk(id,{type:'doughnut',plugins:[centerText],
+    data:{labels:['Lulus','Gagal'],datasets:[{data:[pass,fail],backgroundColor:[color,C.grey],borderWidth:0,hoverOffset:4}]},
+    options:{maintainAspectRatio:false,cutout:'72%',
+      plugins:{legend:{display:false},centerText:{big:pct(pass,tot)+'%',small:`${pass} / ${tot} lulus`},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${pct(c.raw,tot)}%)`}}}}});
+}
+
+function drawTrend(L){
+  const months=new Map(); const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const add=(d,f)=>{if(!d)return;const k=key(d);if(!months.has(k))months.set(k,{pra:0,pasca:0,komp:0});months.get(k)[f]++;};
+  L.forEach(p=>{add(p.praDate,'pra');add(p.pascaDate,'pasca');add(p.kompDate,'komp');});
+  const keys=[...months.keys()].sort();
+  const bln=['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+  const labels=keys.map(k=>{const [y,m]=k.split('-');return `${bln[+m-1]} ${y.slice(2)}`;});
+  mk('cTrend',{data:{labels,datasets:[
+      {type:'bar',label:'Jawab Pra',data:keys.map(k=>months.get(k).pra),backgroundColor:C.violet+'cc',borderRadius:6},
+      {type:'bar',label:'Jawab Pasca',data:keys.map(k=>months.get(k).pasca),backgroundColor:C.blue+'cc',borderRadius:6},
+      {type:'line',label:'Kompeten',data:keys.map(k=>months.get(k).komp),borderColor:C.green,backgroundColor:C.green,
+        tension:.35,borderWidth:3,pointRadius:5,pointBackgroundColor:'#fff',pointBorderWidth:3,
+        datalabels:{display:true,align:'top',color:C.green,font:{weight:'800'}}}]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{y:{beginAtZero:true,grid:{color:'#eef2f6'},ticks:{precision:0}},x:{grid:{display:false}}},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}}}}});
+}
+
+function drawScore(L){
+  const b=L.filter(p=>p.both&&p.pre.pct!=null&&p.post.pct!=null);
+  const avg=a=>a.length?Math.round(a.reduce((s,x)=>s+x,0)/a.length*10)/10:0;
+  const pre=avg(b.map(p=>p.pre.pct)), post=avg(b.map(p=>p.post.pct));
+  mk('cScore',{type:'bar',
+    data:{labels:['Pra','Pasca'],datasets:[{data:[pre,post],backgroundColor:[C.amber,C.teal],borderRadius:12,barPercentage:.6}]},
+    options:{maintainAspectRatio:false,layout:{padding:{top:24}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:'#eef2f6'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{weight:'700'},color:'#0f2a3d'}}},
+      plugins:{legend:{display:false},
+        subtitle:{display:true,position:'bottom',text:b.length?`Peningkatan ${(post-pre>=0?'+':'')}${Math.round((post-pre)*10)/10} mata peratus · n=${b.length}`:'Tiada data',
+          color:C.teal,font:{weight:'700',size:12.5},padding:{top:10}},
+        datalabels:{display:true,anchor:'end',align:'end',color:'#0f2a3d',font:{weight:'800',size:14},formatter:v=>v+'%'}}}});
+}
+
+function drawPTJ(L){
+  const m=new Map();
+  L.forEach(p=>{if(!m.has(p.ptj))m.set(p.ptj,{k:0,b:0});m.get(p.ptj)[p.komp?'k':'b']++;});
+  const top=[...m.entries()].sort((a,b)=>(b[1].k+b[1].b)-(a[1].k+a[1].b)).slice(0,10);
+  mk('cPtj',{type:'bar',
+    data:{labels:top.map(t=>t[0]),datasets:[
+      {label:'Kompeten',data:top.map(t=>t[1].k),backgroundColor:C.green,borderRadius:6,
+        datalabels:{display:c=>c.raw>0,color:'#fff',font:{weight:'800'}}},
+      {label:'Belum kompeten',data:top.map(t=>t[1].b),backgroundColor:'#d6dde6',borderRadius:6,
+        datalabels:{display:c=>c.raw>0,color:'#475569',font:{weight:'700'}}}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,
+      scales:{x:{stacked:true,beginAtZero:true,grid:{color:'#eef2f6'},ticks:{precision:0}},y:{stacked:true,grid:{display:false},ticks:{color:'#0f2a3d',font:{weight:'600'}}}},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8}},
+        tooltip:{callbacks:{footer:items=>{const i=items[0].dataIndex;const t=top[i][1];return `Kadar kompeten: ${pct(t.k,t.k+t.b)}%`;}}}}}});
+}
+
+/* ---------- Jadual ---------- */
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function sc(r){ if(!r) return '<span class="muted">—</span>'; return `<span class="score ${r.pass?'l':'g'}">${r.pct??'-'}%</span>`; }
+function filteredRows(){
+  const q=$('q').value.trim().toLowerCase(), s=$('fStatus').value;
+  return ROWS.filter(p=>(!s||p.status===s)&&(!q||p.nama.toLowerCase().includes(q)||p.ptj.toLowerCase().includes(q)))
+             .sort((a,b)=>a.nama.localeCompare(b.nama));
+}
+function drawTable(){
+  const R=filteredRows();
+  const cls={'Kompeten':'p-ok','Belum lulus Pasca':'p-bad','Belum jawab Pasca':'p-warn','Tiada rekod Pra':'p-na'};
+  $('tbody').innerHTML=R.map((p,i)=>`<tr><td class="muted">${i+1}</td><td><b>${esc(p.nama)}</b></td>
+    <td class="muted">${esc(p.kp.slice(0,6)+(p.kp.length>6?'-xx-xxxx':''))}</td><td>${esc(p.ptj)}</td>
+    <td>${sc(p.pre)}${p.nPra>1?` <span class="muted" style="font-size:11px">(${p.nPra}x)</span>`:''}</td>
+    <td>${sc(p.post)}${p.nPasca>1?` <span class="muted" style="font-size:11px">(${p.nPasca}x)</span>`:''}</td>
+    <td><span class="pill ${cls[p.status]}">${p.status}</span></td></tr>`).join('')
+    || '<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">Tiada rekod</td></tr>';
+  $('tblCount').textContent=`${R.length} peserta`;
+}
+function exportCSV(){
+  const R=filteredRows(); const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const lines=[['Nama','No KP','PTJ','Pra (%)','Lulus Pra','Pasca (%)','Lulus Pasca','Status'].map(q).join(',')]
+    .concat(R.map(p=>[p.nama,p.kp,p.ptj,p.pre?.pct??'',p.pre?(p.pre.pass?'Ya':'Tidak'):'',p.post?.pct??'',p.post?(p.post.pass?'Ya':'Tidak'):'',p.status].map(q).join(',')));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv'}));
+  a.download=`MHPSS_${$('dFrom').value}_${$('dTo').value}.csv`; a.click();
+}
+
+/* ---------- Muat data ---------- */
+async function load(){
+  $('loader').classList.remove('hide');
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv${SHEET_NAME?'&sheet='+encodeURIComponent(SHEET_NAME):''}&_=${Date.now()}`;
+    const res=await fetch(url); if(!res.ok) throw new Error('HTTP '+res.status);
+    ingest(await res.text());
+  }catch(e){
+    $('status').className='status err';
+    $('status').textContent='Gagal memuat data dari Google Sheet ('+e.message+'). Pastikan sheet dikongsi "Anyone with the link", atau guna butang "Muat naik CSV".';
+  }finally{ $('loader').classList.add('hide'); }
+}
+
+/* ---------- Events ---------- */
+['dFrom','dTo','method','exclTest'].forEach(id=>$(id).addEventListener('change',()=>RAW.length&&render()));
+$('q').addEventListener('input',drawTable); $('fStatus').addEventListener('change',drawTable);
+$('btnReload').onclick=load; $('btnExport').onclick=exportCSV;
+$('btnUpload').onclick=()=>$('fileIn').click();
+$('fileIn').onchange=e=>{const f=e.target.files[0]; if(!f) return; f.text().then(t=>{try{ingest(t);}catch(err){$('status').className='status err';$('status').textContent=err.message;}});};
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+  if(!RAW.length) return; const p=b.dataset.preset, now=new Date(); let f, t=now;
+  if(p==='all'){f=RAW.minDate;t=RAW.maxDate;}
+  else if(p==='today') f=now;
+  else if(p==='month') f=new Date(now.getFullYear(),now.getMonth(),1);
+  else if(p==='30') f=new Date(now-29*864e5);
+  else if(p==='year') f=new Date(now.getFullYear(),0,1);
+  $('dFrom').value=ymd(f); $('dTo').value=ymd(t); render();
+});
+load();
+</script>
+</body>
+</html>
